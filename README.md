@@ -264,7 +264,7 @@ ojt-chip8/
 
 ### Git 管理
 
-- 用本仓库（Bitbucket：`vividnode/ojt-chip8`）管理
+- 用本仓库（Bitbucket：`vividnode/ojt-chip8_20260616a`）管理
 - 提交要细分（最少 20 commits）
 - 提交信息用英文
 
