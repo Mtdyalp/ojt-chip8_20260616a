@@ -79,3 +79,13 @@ int chip8_load_rom(chip8_t *cpu, const char *path)
     printf("chip8: 加载 %s 成功 (%ld 字节)\n", path, sz);
     return 1;
 }
+
+void chip8_emulate_cycle(chip8_t *cpu)
+{
+    // ===== FETCH =====
+    uint16_t opcode = (cpu->mem[cpu->PC] << 8) | cpu->mem[cpu->PC + 1];
+    cpu->PC += 2;
+
+    // ===== DECODE + EXECUTE =====
+    chip8_execute_opcode(cpu, opcode);
+}
