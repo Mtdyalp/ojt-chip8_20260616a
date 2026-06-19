@@ -9,7 +9,6 @@ TEST_TARGET = test_cpu
 SRCS = src/main.c src/chip8.c src/opcodes.c
 OBJS = $(SRCS:.c=.o)
 
-# ===== 一次生成两个 =====
 all: $(TARGET) $(TEST_TARGET)
 
 $(TARGET): $(OBJS)
@@ -18,11 +17,14 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# ===== test_cpu 编译规则 =====
+$(TEST_TARGET): test/test_cpu.c src/chip8.c src/opcodes.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 debug: CFLAGS = $(DEBUG_FLAGS)
 debug: clean $(TARGET)
 
-test: test/test_cpu.c src/chip8.c src/opcodes.c
-	$(CC) $(CFLAGS) -o $(TEST_TARGET) $^ $(LDFLAGS)
+test: $(TEST_TARGET)
 	@echo "编译完成，手动运行: ./$(TEST_TARGET)"
 
 clean:
