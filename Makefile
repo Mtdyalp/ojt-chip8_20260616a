@@ -9,7 +9,8 @@ TEST_TARGET = test_cpu
 SRCS = src/main.c src/chip8.c src/opcodes.c
 OBJS = $(SRCS:.c=.o)
 
-all: $(TARGET)
+# ===== 一次生成两个 =====
+all: $(TARGET) $(TEST_TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
