@@ -26,7 +26,7 @@ static void print_result(const char *name, int passed)
 }
 
 /* ============================================================
-   测试1：6xkk - LD Vx, kk
+   寄存器操作类（11条）
    ============================================================ */
 
 static void test_6xkk_ld_byte(void)
@@ -39,10 +39,6 @@ static void test_6xkk_ld_byte(void)
     check(passed);
 }
 
-/* ============================================================
-   测试2：7xkk - ADD Vx, kk
-   ============================================================ */
-
 static void test_7xkk_add_byte(void)
 {
     chip8_t cpu;
@@ -54,10 +50,6 @@ static void test_7xkk_add_byte(void)
     check(passed);
 }
 
-/* ============================================================
-   测试3：8xy0 - LD Vx, Vy
-   ============================================================ */
-
 static void test_8xy0_ld_reg(void)
 {
     chip8_t cpu;
@@ -68,10 +60,6 @@ static void test_8xy0_ld_reg(void)
     print_result("LD Vx, Vy", passed);
     check(passed);
 }
-
-/* ============================================================
-   测试4-6：8xy1 OR / 8xy2 AND / 8xy3 XOR
-   ============================================================ */
 
 static void test_8xy1_or(void)
 {
@@ -109,10 +97,6 @@ static void test_8xy3_xor(void)
     check(passed);
 }
 
-/* ============================================================
-   测试7：8xy4 - ADD Vx, Vy (带进位)
-   ============================================================ */
-
 static void test_8xy4_add_carry(void)
 {
     chip8_t cpu;
@@ -124,10 +108,6 @@ static void test_8xy4_add_carry(void)
     print_result("ADD Vx, Vy + carry", passed);
     check(passed);
 }
-
-/* ============================================================
-   测试8：8xy5 - SUB Vx, Vy
-   ============================================================ */
 
 static void test_8xy5_sub(void)
 {
@@ -141,10 +121,6 @@ static void test_8xy5_sub(void)
     check(passed);
 }
 
-/* ============================================================
-   测试9：8xy6 - SHR Vx
-   ============================================================ */
-
 static void test_8xy6_shr(void)
 {
     chip8_t cpu;
@@ -155,10 +131,6 @@ static void test_8xy6_shr(void)
     print_result("SHR/SHL", passed);
     check(passed);
 }
-
-/* ============================================================
-   测试10：8xy7 - SUBN Vx, Vy
-   ============================================================ */
 
 static void test_8xy7_subn(void)
 {
@@ -172,10 +144,6 @@ static void test_8xy7_subn(void)
     check(passed);
 }
 
-/* ============================================================
-   测试11：8xyE - SHL Vx
-   ============================================================ */
-
 static void test_8xye_shl(void)
 {
     chip8_t cpu;
@@ -188,7 +156,159 @@ static void test_8xye_shl(void)
 }
 
 /* ============================================================
-   测试12：font loading
+   控制流类（8条）
+   ============================================================ */
+
+static void test_1nnn_jump(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x1A35);
+    int passed = (cpu.PC == 0xA35);
+    print_result("JP nnn", passed);
+    check(passed);
+}
+
+static void test_3xkk_se(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    /* 条件成立：相等，跳过 */
+    cpu.V[0xA] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x3A3F);
+    int passed = (cpu.PC == 0x202);
+    print_result("SE Vx, kk - equal", passed);
+    check(passed);
+
+    /* 条件不成立：不相等，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x3A40);
+    passed = (cpu.PC == 0x200);
+    print_result("SE Vx, kk - not equal", passed);
+    check(passed);
+}
+
+static void test_4xkk_sne(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    /* 条件成立：不相等，跳过 */
+    cpu.V[0xA] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x4A40);
+    int passed = (cpu.PC == 0x202);
+    print_result("SNE Vx, kk - not equal", passed);
+    check(passed);
+
+    /* 条件不成立：相等，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x4A3F);
+    passed = (cpu.PC == 0x200);
+    print_result("SNE Vx, kk - equal", passed);
+    check(passed);
+}
+
+static void test_bnnn_jump_v0(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0] = 0x10;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0xBA35);
+    int passed = (cpu.PC == 0xA45);
+    print_result("JP V0, nnn", passed);
+    check(passed);
+}
+
+static void test_5xy0_se_reg(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    /* 条件成立：相等，跳过 */
+    cpu.V[0xA] = 0x3F;
+    cpu.V[0xB] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x5AB0);
+    int passed = (cpu.PC == 0x202);
+    print_result("SE Vx, Vy - equal", passed);
+    check(passed);
+
+    /* 条件不成立：不相等，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.V[0xB] = 0x40;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x5AB0);
+    passed = (cpu.PC == 0x200);
+    print_result("SE Vx, Vy - not equal", passed);
+    check(passed);
+}
+
+static void test_9xy0_sne_reg(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    /* 条件成立：不相等，跳过 */
+    cpu.V[0xA] = 0x3F;
+    cpu.V[0xB] = 0x40;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x9AB0);
+    int passed = (cpu.PC == 0x202);
+    print_result("SNE Vx, Vy - not equal", passed);
+    check(passed);
+
+    /* 条件不成立：相等，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.V[0xB] = 0x3F;
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x9AB0);
+    passed = (cpu.PC == 0x200);
+    print_result("SNE Vx, Vy - equal", passed);
+    check(passed);
+}
+
+static void test_2nnn_call(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x2A35);
+
+    int passed = (cpu.SP == 1) &&
+                 (cpu.stack[0] == 0x200) &&
+                 (cpu.PC == 0xA35);
+    print_result("CALL nnn", passed);
+    check(passed);
+}
+
+static void test_00ee_ret(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    cpu.PC = 0x200;
+    chip8_execute_opcode(&cpu, 0x2A35);
+    chip8_execute_opcode(&cpu, 0x00EE);
+
+    int passed = (cpu.SP == 0) &&
+                 (cpu.PC == 0x200);
+    print_result("RET", passed);
+    check(passed);
+}
+
+/* ============================================================
+   基础功能
    ============================================================ */
 
 static void test_font_loading(void)
@@ -201,10 +321,6 @@ static void test_font_loading(void)
     print_result("font loading", passed);
     check(passed);
 }
-
-/* ============================================================
-   测试13：ROM loading
-   ============================================================ */
 
 static void test_rom_loading(void)
 {
@@ -236,6 +352,7 @@ int main(void)
     total_tests = 0;
     passed_tests = 0;
 
+    /* 寄存器操作类 (11条) */
     test_6xkk_ld_byte();
     test_7xkk_add_byte();
     test_8xy0_ld_reg();
@@ -247,6 +364,18 @@ int main(void)
     test_8xy6_shr();
     test_8xy7_subn();
     test_8xye_shl();
+
+    /* 控制流类 (8条) */
+    test_1nnn_jump();
+    test_3xkk_se();
+    test_4xkk_sne();
+    test_bnnn_jump_v0();
+    test_5xy0_se_reg();
+    test_9xy0_sne_reg();
+    test_2nnn_call();
+    test_00ee_ret();
+
+    /* 基础功能 (2条) */
     test_font_loading();
     test_rom_loading();
 

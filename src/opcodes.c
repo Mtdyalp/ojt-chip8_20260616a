@@ -5,7 +5,7 @@
 
 void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode)
 {
-    // uint16_t nnn = opcode & 0x0FFF;   /* 第2步才用到，暂时注释 */
+    uint16_t nnn = opcode & 0x0FFF;
     uint8_t kk = opcode & 0x00FF;
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
@@ -13,33 +13,68 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode)
 
     switch (opcode & 0xF000) {
         /* ============================================================
-           0x0000: 系统类（后续实现）
+           系统类
            ============================================================ */
         case 0x0000:
+            if (opcode == 0x00E0) {
+                /* CLS 清屏 */
+                memset(cpu->screen, 0, sizeof(cpu->screen));
+                cpu->dirty = 1;
+            } else if (opcode == 0x00EE) {
+                /* 00EE: RET - 从子程序返回 */
+                if (cpu->SP > 0) {
+                    cpu->SP--;
+                    cpu->PC = cpu->stack[cpu->SP];
+                }
+            }
             break;
 
         /* ============================================================
-           0x1000: 控制流类（后续实现）
+           控制流类
            ============================================================ */
-        case 0x1000:
+        case 0x1000:  /* 1nnn: JP nnn */
+            cpu->PC = nnn;
             break;
 
-        case 0x2000:
+        case 0x2000:  /* 2nnn: CALL nnn */
+            if (cpu->SP < 16) {
+                cpu->stack[cpu->SP] = cpu->PC;
+                cpu->SP++;
+                cpu->PC = nnn;
+            }
             break;
 
-        case 0x3000:
+        case 0x3000:  /* 3xkk: SE Vx, kk */
+            if (cpu->V[x] == kk) {
+                cpu->PC += 2;
+            }
             break;
 
-        case 0x4000:
+        case 0x4000:  /* 4xkk: SNE Vx, kk */
+            if (cpu->V[x] != kk) {
+                cpu->PC += 2;
+            }
             break;
 
-        case 0x5000:
+        case 0x5000:  /* 5xy0: SE Vx, Vy */
+            if (cpu->V[x] == cpu->V[y]) {
+                cpu->PC += 2;
+            }
+            break;
+
+        case 0x9000:  /* 9xy0: SNE Vx, Vy */
+            if (cpu->V[x] != cpu->V[y]) {
+                cpu->PC += 2;
+            }
+            break;
+
+        case 0xB000:  /* Bnnn: JP V0, nnn */
+            cpu->PC = nnn + cpu->V[0];
             break;
 
         /* ============================================================
-           第1步：寄存器操作类（11条）✅
+           寄存器操作类
            ============================================================ */
-
         case 0x6000:  /* 6xkk: LD Vx, kk */
             cpu->V[x] = kk;
             break;
@@ -48,7 +83,7 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode)
             cpu->V[x] += kk;
             break;
 
-        case 0x8000:  /* 8xyn: 寄存器操作族 */
+        case 0x8000:
             switch (n) {
                 case 0x0:  /* 8xy0: LD Vx, Vy */
                     cpu->V[x] = cpu->V[y];
@@ -98,45 +133,24 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode)
                     break;
 
                 default:
-                    printf("未知 8XYN 操作: 0x%X\n", n);
                     break;
             }
             break;
 
         /* ============================================================
-           0x9000: 控制流类（后续实现）
+           内存操作类
            ============================================================ */
-        case 0x9000:
+        case 0xA000:  /* Annn: LD I, nnn */
+            cpu->I = nnn;
             break;
 
         /* ============================================================
-           0xA000: 内存操作类（后续实现）
+           待实现指令
            ============================================================ */
-        case 0xA000:
-            break;
-
-        case 0xB000:
-            break;
-
-        case 0xC000:
-            break;
-
-        /* ============================================================
-           0xD000: 绘制类（后续实现）
-           ============================================================ */
-        case 0xD000:
-            break;
-
-        /* ============================================================
-           0xE000: 键盘类（后续实现）
-           ============================================================ */
-        case 0xE000:
-            break;
-
-        /* ============================================================
-           0xF000: 杂项（后续实现）
-           ============================================================ */
-        case 0xF000:
+        case 0xC000:  /* RND Vx, kk */
+        case 0xD000:  /* DRW Vx, Vy, n */
+        case 0xE000:  /* 键盘类 */
+        case 0xF000:  /* 杂项 */
             break;
 
         default:
