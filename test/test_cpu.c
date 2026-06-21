@@ -1,9 +1,10 @@
 #include "../include/chip8.h"
+#include "../include/opcodes.h"   /* ?? */
 #include <stdio.h>
 #include <string.h>
 
 /* ============================================================
-   测试辅助函数
+   ??????
    ============================================================ */
 
 static int total_tests = 0;
@@ -26,7 +27,7 @@ static void print_result(const char *name, int passed)
 }
 
 /* ============================================================
-   寄存器操作类（11条）
+   ???????11??
    ============================================================ */
 
 static void test_6xkk_ld_byte(void)
@@ -156,7 +157,7 @@ static void test_8xye_shl(void)
 }
 
 /* ============================================================
-   控制流类（8条）
+   ?????8??
    ============================================================ */
 
 static void test_1nnn_jump(void)
@@ -300,7 +301,7 @@ static void test_00ee_ret(void)
 }
 
 /* ============================================================
-   描画类（2条）
+   ????2??
    ============================================================ */
 
 static void test_cls(void)
@@ -366,7 +367,7 @@ static void test_draw(void)
 }
 
 /* ============================================================
-   键盘类（3条）
+   ????3??
    ============================================================ */
 
 static void test_ex9e_skp(void)
@@ -376,14 +377,14 @@ static void test_ex9e_skp(void)
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
 
-    /* 场景1：键按下，应该跳过 */
+    /* ??1????????? */
     cpu.key_down[0x5] = 1;
     chip8_execute_opcode(&cpu, 0xEA9E);
     int passed = (cpu.PC == 0x202);
     print_result("SKP - key pressed", passed);
     check(passed);
 
-    /* 场景2：键未按下，不跳过 */
+    /* ??2????????? */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
@@ -401,14 +402,14 @@ static void test_exa1_sknp(void)
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
 
-    /* 场景1：键未按下，应该跳过 */
+    /* ??1?????????? */
     cpu.key_down[0x5] = 0;
     chip8_execute_opcode(&cpu, 0xEAA1);
     int passed = (cpu.PC == 0x202);
     print_result("SKNP - key not pressed", passed);
     check(passed);
 
-    /* 场景2：键按下，不跳过 */
+    /* ??2???????? */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
@@ -433,7 +434,7 @@ static void test_fx0a_wait_key(void)
 }
 
 /* ============================================================
-   定时器类 + 随机数（4条）- 新增
+   ???? + ????4??
    ============================================================ */
 
 static void test_fx07_get_delay(void)
@@ -488,7 +489,85 @@ static void test_cxkk_rnd(void)
 }
 
 /* ============================================================
-   基础功能
+   ??????5??- ??
+   ============================================================ */
+
+static void test_fx1e_add_i(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.I = 0x300;
+    cpu.V[0xA] = 0x10;
+
+    chip8_execute_opcode(&cpu, 0xFA1E);
+    int passed = (cpu.I == 0x310);
+    print_result("ADD I, Vx", passed);
+    check(passed);
+}
+
+static void test_fx29_font_addr(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x5;
+
+    chip8_execute_opcode(&cpu, 0xFA29);
+    int passed = (cpu.I == 25);
+    print_result("LD F, Vx", passed);
+    check(passed);
+}
+
+static void test_fx33_bcd(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 123;
+    cpu.I = 0x300;
+
+    chip8_execute_opcode(&cpu, 0xFA33);
+    int passed = (cpu.mem[0x300] == 1) &&
+                 (cpu.mem[0x301] == 2) &&
+                 (cpu.mem[0x302] == 3);
+    print_result("LD B, Vx - BCD", passed);
+    check(passed);
+}
+
+static void test_fx55_store(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0] = 0x01;
+    cpu.V[1] = 0x02;
+    cpu.V[2] = 0x03;
+    cpu.I = 0x300;
+
+    chip8_execute_opcode(&cpu, 0xF255);
+    int passed = (cpu.mem[0x300] == 0x01) &&
+                 (cpu.mem[0x301] == 0x02) &&
+                 (cpu.mem[0x302] == 0x03);
+    print_result("LD [I], Vx - store", passed);
+    check(passed);
+}
+
+static void test_fx65_load(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.I = 0x300;
+    cpu.mem[0x300] = 0x0A;
+    cpu.mem[0x301] = 0x0B;
+    cpu.mem[0x302] = 0x0C;
+
+    chip8_execute_opcode(&cpu, 0xF265);
+    int passed = (cpu.V[0] == 0x0A) &&
+                 (cpu.V[1] == 0x0B) &&
+                 (cpu.V[2] == 0x0C);
+    print_result("LD Vx, [I] - load", passed);
+    check(passed);
+}
+
+/* ============================================================
+   ????
    ============================================================ */
 
 static void test_font_loading(void)
@@ -512,7 +591,7 @@ static void test_rom_loading(void)
     fwrite(fake, 1, sizeof(fake), fp);
     fclose(fp);
 
-    int ok = chip8_load_rom(&cpu, "fake_rom.bin");
+    int ok = chip8_load(&cpu, "fake_rom.bin");
     int passed = (ok == 1) &&
                  (cpu.mem[0x200] == 0xA0) &&
                  (cpu.mem[0x201] == 0x12);
@@ -532,7 +611,7 @@ int main(void)
     total_tests = 0;
     passed_tests = 0;
 
-    /* 寄存器操作类 (11条) */
+    /* ?????? (11?) */
     test_6xkk_ld_byte();
     test_7xkk_add_byte();
     test_8xy0_ld_reg();
@@ -545,7 +624,7 @@ int main(void)
     test_8xy7_subn();
     test_8xye_shl();
 
-    /* 控制流类 (8条) */
+    /* ???? (8?) */
     test_1nnn_jump();
     test_3xkk_se();
     test_4xkk_sne();
@@ -555,22 +634,29 @@ int main(void)
     test_2nnn_call();
     test_00ee_ret();
 
-    /* 描画类 (2条) */
+    /* ??? (2?) */
     test_cls();
     test_draw();
 
-    /* 键盘类 (3条) */
+    /* ??? (3?) */
     test_ex9e_skp();
     test_exa1_sknp();
     test_fx0a_wait_key();
 
-    /* ===== 新增：定时器类 + 随机数 (4条) ===== */
+    /* ???? + ??? (4?) */
     test_fx07_get_delay();
     test_fx15_set_delay();
     test_fx18_set_sound();
     test_cxkk_rnd();
 
-    /* 基础功能 (2条) */
+    /* ===== ???????? (5?) ===== */
+    test_fx1e_add_i();
+    test_fx29_font_addr();
+    test_fx33_bcd();
+    test_fx55_store();
+    test_fx65_load();
+
+    /* ???? (2?) */
     test_font_loading();
     test_rom_loading();
 
