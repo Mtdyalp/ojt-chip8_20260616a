@@ -366,7 +366,7 @@ static void test_draw(void)
 }
 
 /* ============================================================
-   键盘类（3条）- 新增
+   键盘类（3条）
    ============================================================ */
 
 static void test_ex9e_skp(void)
@@ -429,6 +429,61 @@ static void test_fx0a_wait_key(void)
     chip8_execute_opcode(&cpu, 0xFA0A);
     int passed = (cpu.key_waiting == 1);
     print_result("LD Vx, K - wait flag", passed);
+    check(passed);
+}
+
+/* ============================================================
+   定时器类 + 随机数（4条）- 新增
+   ============================================================ */
+
+static void test_fx07_get_delay(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.delay_timer = 0x3F;
+    cpu.V[0xA] = 0;
+
+    chip8_execute_opcode(&cpu, 0xFA07);
+    int passed = (cpu.V[0xA] == 0x3F);
+    print_result("LD Vx, DT", passed);
+    check(passed);
+}
+
+static void test_fx15_set_delay(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.delay_timer = 0;
+
+    chip8_execute_opcode(&cpu, 0xFA15);
+    int passed = (cpu.delay_timer == 0x3F);
+    print_result("LD DT, Vx", passed);
+    check(passed);
+}
+
+static void test_fx18_set_sound(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x3F;
+    cpu.sound_timer = 0;
+
+    chip8_execute_opcode(&cpu, 0xFA18);
+    int passed = (cpu.sound_timer == 0x3F);
+    print_result("LD ST, Vx", passed);
+    check(passed);
+}
+
+static void test_cxkk_rnd(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0;
+
+    chip8_execute_opcode(&cpu, 0xCA0F);
+    int passed = (cpu.V[0xA] <= 0x0F);
+    print_result("RND Vx, kk - range", passed);
     check(passed);
 }
 
@@ -504,10 +559,16 @@ int main(void)
     test_cls();
     test_draw();
 
-    /* 键盘类 (3条) - 新增 */
+    /* 键盘类 (3条) */
     test_ex9e_skp();
     test_exa1_sknp();
     test_fx0a_wait_key();
+
+    /* ===== 新增：定时器类 + 随机数 (4条) ===== */
+    test_fx07_get_delay();
+    test_fx15_set_delay();
+    test_fx18_set_sound();
+    test_cxkk_rnd();
 
     /* 基础功能 (2条) */
     test_font_loading();
