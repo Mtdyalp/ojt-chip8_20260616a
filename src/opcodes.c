@@ -145,12 +145,38 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode)
             break;
 
         /* ============================================================
+           描画类 - 新增 Dxyn
+           ============================================================ */
+        case 0xD000:  /* Dxyn: DRW Vx, Vy, n */
+        {
+            uint8_t x_pos = cpu->V[x] % 64;
+            uint8_t y_pos = cpu->V[y] % 32;
+            cpu->V[0xF] = 0;
+
+            for (int row = 0; row < n; row++) {
+                uint8_t sprite_byte = cpu->mem[cpu->I + row];
+                for (int col = 0; col < 8; col++) {
+                    if (sprite_byte & (0x80 >> col)) {
+                        int pixel_x = (x_pos + col) % 64;
+                        int pixel_y = (y_pos + row) % 32;
+                        int idx = pixel_y * 64 + pixel_x;
+                        if (cpu->screen[idx] == 1) {
+                            cpu->V[0xF] = 1;
+                        }
+                        cpu->screen[idx] ^= 1;
+                    }
+                }
+            }
+            cpu->dirty = 1;
+            break;
+        }
+
+        /* ============================================================
            待实现指令
            ============================================================ */
         case 0xC000:  /* RND Vx, kk */
-        case 0xD000:  /* DRW Vx, Vy, n */
         case 0xE000:  /* 键盘类 */
-        case 0xF000:  /* 杂项 */
+        case 0xF000:  /* 杂项（Fx1E, Fx29, Fx33, Fx55, Fx65, Fx07, Fx15, Fx18, Fx0A） */
             break;
 
         default:

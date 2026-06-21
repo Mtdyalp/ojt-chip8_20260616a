@@ -175,7 +175,6 @@ static void test_3xkk_se(void)
     chip8_t cpu;
     chip8_init(&cpu);
 
-    /* 条件成立：相等，跳过 */
     cpu.V[0xA] = 0x3F;
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x3A3F);
@@ -183,7 +182,6 @@ static void test_3xkk_se(void)
     print_result("SE Vx, kk - equal", passed);
     check(passed);
 
-    /* 条件不成立：不相等，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x3F;
     cpu.PC = 0x200;
@@ -198,7 +196,6 @@ static void test_4xkk_sne(void)
     chip8_t cpu;
     chip8_init(&cpu);
 
-    /* 条件成立：不相等，跳过 */
     cpu.V[0xA] = 0x3F;
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x4A40);
@@ -206,7 +203,6 @@ static void test_4xkk_sne(void)
     print_result("SNE Vx, kk - not equal", passed);
     check(passed);
 
-    /* 条件不成立：相等，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x3F;
     cpu.PC = 0x200;
@@ -233,7 +229,6 @@ static void test_5xy0_se_reg(void)
     chip8_t cpu;
     chip8_init(&cpu);
 
-    /* 条件成立：相等，跳过 */
     cpu.V[0xA] = 0x3F;
     cpu.V[0xB] = 0x3F;
     cpu.PC = 0x200;
@@ -242,7 +237,6 @@ static void test_5xy0_se_reg(void)
     print_result("SE Vx, Vy - equal", passed);
     check(passed);
 
-    /* 条件不成立：不相等，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x3F;
     cpu.V[0xB] = 0x40;
@@ -258,7 +252,6 @@ static void test_9xy0_sne_reg(void)
     chip8_t cpu;
     chip8_init(&cpu);
 
-    /* 条件成立：不相等，跳过 */
     cpu.V[0xA] = 0x3F;
     cpu.V[0xB] = 0x40;
     cpu.PC = 0x200;
@@ -267,7 +260,6 @@ static void test_9xy0_sne_reg(void)
     print_result("SNE Vx, Vy - not equal", passed);
     check(passed);
 
-    /* 条件不成立：相等，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x3F;
     cpu.V[0xB] = 0x3F;
@@ -304,6 +296,72 @@ static void test_00ee_ret(void)
     int passed = (cpu.SP == 0) &&
                  (cpu.PC == 0x200);
     print_result("RET", passed);
+    check(passed);
+}
+
+/* ============================================================
+   描画类（2条）- 新增
+   ============================================================ */
+
+static void test_cls(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    cpu.screen[0] = 1;
+    cpu.screen[100] = 1;
+    cpu.screen[200] = 1;
+
+    chip8_execute_opcode(&cpu, 0x00E0);
+
+    int passed = 1;
+    for (int i = 0; i < 2048; i++) {
+        if (cpu.screen[i] != 0) {
+            passed = 0;
+            break;
+        }
+    }
+    passed = passed && (cpu.dirty == 1);
+    print_result("CLS", passed);
+    check(passed);
+}
+
+static void test_draw(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    cpu.mem[0x300] = 0x80;
+    cpu.mem[0x301] = 0xC0;
+    cpu.mem[0x302] = 0xE0;
+    cpu.I = 0x300;
+    cpu.V[0xA] = 0;
+    cpu.V[0xB] = 0;
+
+    chip8_execute_opcode(&cpu, 0xDAB3);
+    int passed = (cpu.V[0xF] == 0);
+    int has_pixel = 0;
+    for (int i = 0; i < 2048; i++) {
+        if (cpu.screen[i] == 1) {
+            has_pixel = 1;
+            break;
+        }
+    }
+    passed = passed && has_pixel;
+
+    chip8_execute_opcode(&cpu, 0xDAB3);
+    passed = passed && (cpu.V[0xF] == 1);
+
+    int all_zero = 1;
+    for (int i = 0; i < 2048; i++) {
+        if (cpu.screen[i] != 0) {
+            all_zero = 0;
+            break;
+        }
+    }
+    passed = passed && all_zero;
+
+    print_result("DRW", passed);
     check(passed);
 }
 
@@ -374,6 +432,10 @@ int main(void)
     test_9xy0_sne_reg();
     test_2nnn_call();
     test_00ee_ret();
+
+    /* 描画类 (2条) - 新增 */
+    test_cls();
+    test_draw();
 
     /* 基础功能 (2条) */
     test_font_loading();
