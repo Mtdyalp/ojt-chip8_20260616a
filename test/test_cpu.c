@@ -300,7 +300,7 @@ static void test_00ee_ret(void)
 }
 
 /* ============================================================
-   描画类（2条）- 新增
+   描画类（2条）
    ============================================================ */
 
 static void test_cls(void)
@@ -362,6 +362,73 @@ static void test_draw(void)
     passed = passed && all_zero;
 
     print_result("DRW", passed);
+    check(passed);
+}
+
+/* ============================================================
+   键盘类（3条）- 新增
+   ============================================================ */
+
+static void test_ex9e_skp(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x5;
+    cpu.PC = 0x200;
+
+    /* 场景1：键按下，应该跳过 */
+    cpu.key_down[0x5] = 1;
+    chip8_execute_opcode(&cpu, 0xEA9E);
+    int passed = (cpu.PC == 0x202);
+    print_result("SKP - key pressed", passed);
+    check(passed);
+
+    /* 场景2：键未按下，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x5;
+    cpu.PC = 0x200;
+    cpu.key_down[0x5] = 0;
+    chip8_execute_opcode(&cpu, 0xEA9E);
+    passed = (cpu.PC == 0x200);
+    print_result("SKP - key not pressed", passed);
+    check(passed);
+}
+
+static void test_exa1_sknp(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x5;
+    cpu.PC = 0x200;
+
+    /* 场景1：键未按下，应该跳过 */
+    cpu.key_down[0x5] = 0;
+    chip8_execute_opcode(&cpu, 0xEAA1);
+    int passed = (cpu.PC == 0x202);
+    print_result("SKNP - key not pressed", passed);
+    check(passed);
+
+    /* 场景2：键按下，不跳过 */
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0x5;
+    cpu.PC = 0x200;
+    cpu.key_down[0x5] = 1;
+    chip8_execute_opcode(&cpu, 0xEAA1);
+    passed = (cpu.PC == 0x200);
+    print_result("SKNP - key pressed", passed);
+    check(passed);
+}
+
+static void test_fx0a_wait_key(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+    cpu.V[0xA] = 0;
+    cpu.key_waiting = 0;
+
+    chip8_execute_opcode(&cpu, 0xFA0A);
+    int passed = (cpu.key_waiting == 1);
+    print_result("LD Vx, K - wait flag", passed);
     check(passed);
 }
 
@@ -433,9 +500,14 @@ int main(void)
     test_2nnn_call();
     test_00ee_ret();
 
-    /* 描画类 (2条) - 新增 */
+    /* 描画类 (2条) */
     test_cls();
     test_draw();
+
+    /* 键盘类 (3条) - 新增 */
+    test_ex9e_skp();
+    test_exa1_sknp();
+    test_fx0a_wait_key();
 
     /* 基础功能 (2条) */
     test_font_loading();
