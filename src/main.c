@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     chip8_t cpu;
     chip8_init(&cpu);
 
-    if (!chip8_load_rom(&cpu, argv[1])) {
+    if (!chip8_load(&cpu, argv[1])) {
         printf("加载 ROM 失败\n");
         return 1;
     }

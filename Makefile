@@ -4,10 +4,12 @@ DEBUG_FLAGS = -Wall -Wextra -g -I./include -std=c99 -DDEBUG
 LDFLAGS = -lm
 
 TARGET = chip8
-TEST_TARGET = test_cpu
+TEST_TARGET = test_runner
 
 SRCS = src/main.c src/chip8.c src/opcodes.c
 OBJS = $(SRCS:.c=.o)
+
+TEST_SRCS = test/test_cpu.c src/chip8.c src/opcodes.c
 
 # ===== make 只编译主程序 =====
 all: $(TARGET)
@@ -24,10 +26,12 @@ $(TEST_TARGET): test/test_cpu.c src/chip8.c src/opcodes.c
 
 test: $(TEST_TARGET)
 
+# ===== make debug 编译调试版 =====
 debug: CFLAGS = $(DEBUG_FLAGS)
 debug: clean $(TARGET)
 
+# ===== make clean 清理 =====
 clean:
-	rm -f $(TARGET) $(TEST_TARGET) *.o src/*.o
+	rm -f $(TARGET) $(TEST_TARGET) *.o src/*.o test/*.o
 
 .PHONY: all debug test clean
