@@ -148,7 +148,7 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
             }
             break;
         default:
-            printf("鏈煡鎸囦护: 0x%04X\n", op);
+            printf("Unknown opcode: 0x%04X\n", op);
             break;
     }
 }

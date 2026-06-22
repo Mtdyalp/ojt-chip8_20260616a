@@ -1,10 +1,10 @@
 #include "../include/chip8.h"
-#include "../include/opcodes.h"   /* ?? */
+#include "../include/opcodes.h"
 #include <stdio.h>
 #include <string.h>
 
 /* ============================================================
-   ??????
+   测试辅助函数
    ============================================================ */
 
 static int total_tests = 0;
@@ -27,7 +27,7 @@ static void print_result(const char *name, int passed)
 }
 
 /* ============================================================
-   ???????11??
+   寄存器操作类（11条）
    ============================================================ */
 
 static void test_6xkk_ld_byte(void)
@@ -157,7 +157,7 @@ static void test_8xye_shl(void)
 }
 
 /* ============================================================
-   ?????8??
+   控制流类（8条）
    ============================================================ */
 
 static void test_1nnn_jump(void)
@@ -301,7 +301,7 @@ static void test_00ee_ret(void)
 }
 
 /* ============================================================
-   ????2??
+   描画类（2条）
    ============================================================ */
 
 static void test_cls(void)
@@ -367,7 +367,7 @@ static void test_draw(void)
 }
 
 /* ============================================================
-   ????3??
+   键盘类（3条）
    ============================================================ */
 
 static void test_ex9e_skp(void)
@@ -377,14 +377,14 @@ static void test_ex9e_skp(void)
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
 
-    /* ??1????????? */
+    /* 场景1：键按下，应该跳过 */
     cpu.key_down[0x5] = 1;
     chip8_execute_opcode(&cpu, 0xEA9E);
     int passed = (cpu.PC == 0x202);
     print_result("SKP - key pressed", passed);
     check(passed);
 
-    /* ??2????????? */
+    /* 场景2：键未按下，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
@@ -402,14 +402,14 @@ static void test_exa1_sknp(void)
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
 
-    /* ??1?????????? */
+    /* 场景1：键未按下，应该跳过 */
     cpu.key_down[0x5] = 0;
     chip8_execute_opcode(&cpu, 0xEAA1);
     int passed = (cpu.PC == 0x202);
     print_result("SKNP - key not pressed", passed);
     check(passed);
 
-    /* ??2???????? */
+    /* 场景2：键按下，不跳过 */
     chip8_init(&cpu);
     cpu.V[0xA] = 0x5;
     cpu.PC = 0x200;
@@ -434,7 +434,7 @@ static void test_fx0a_wait_key(void)
 }
 
 /* ============================================================
-   ???? + ????4??
+   定时器类 + 随机数（4条）
    ============================================================ */
 
 static void test_fx07_get_delay(void)
@@ -489,7 +489,7 @@ static void test_cxkk_rnd(void)
 }
 
 /* ============================================================
-   ??????5??- ??
+   内存操作类（5条）
    ============================================================ */
 
 static void test_fx1e_add_i(void)
@@ -567,7 +567,7 @@ static void test_fx65_load(void)
 }
 
 /* ============================================================
-   ????
+   基础功能
    ============================================================ */
 
 static void test_font_loading(void)
@@ -611,7 +611,7 @@ int main(void)
     total_tests = 0;
     passed_tests = 0;
 
-    /* ?????? (11?) */
+    /* 寄存器操作类 (11条) */
     test_6xkk_ld_byte();
     test_7xkk_add_byte();
     test_8xy0_ld_reg();
@@ -624,7 +624,7 @@ int main(void)
     test_8xy7_subn();
     test_8xye_shl();
 
-    /* ???? (8?) */
+    /* 控制流类 (8条) */
     test_1nnn_jump();
     test_3xkk_se();
     test_4xkk_sne();
@@ -634,29 +634,29 @@ int main(void)
     test_2nnn_call();
     test_00ee_ret();
 
-    /* ??? (2?) */
+    /* 描画类 (2条) */
     test_cls();
     test_draw();
 
-    /* ??? (3?) */
+    /* 键盘类 (3条) */
     test_ex9e_skp();
     test_exa1_sknp();
     test_fx0a_wait_key();
 
-    /* ???? + ??? (4?) */
+    /* 定时器类 + 随机数 (4条) */
     test_fx07_get_delay();
     test_fx15_set_delay();
     test_fx18_set_sound();
     test_cxkk_rnd();
 
-    /* ===== ???????? (5?) ===== */
+    /* 内存操作类 (5条) */
     test_fx1e_add_i();
     test_fx29_font_addr();
     test_fx33_bcd();
     test_fx55_store();
     test_fx65_load();
 
-    /* ???? (2?) */
+    /* 基础功能 (2条) */
     test_font_loading();
     test_rom_loading();
 
