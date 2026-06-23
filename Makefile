@@ -10,7 +10,7 @@ TARGET = chip8
 TEST_TARGET = test_cpu
 
 # ===== 主程序源文件（新增 display.c） =====
-SRCS = src/main.c src/chip8.c src/opcodes.c src/display.c
+SRCS = src/main.c src/chip8.c src/opcodes.c src/display.c src/input.c
 OBJS = $(SRCS:.c=.o)
 
 TEST_SRCS = test/test_cpu.c src/chip8.c src/opcodes.c
