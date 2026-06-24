@@ -21,6 +21,7 @@ static const SDL_KeyCode keymap[16] = {
     SDLK_v       /* 0xF */
 };
 
+//如：把 SDL 底层扫描的 SDLK_q 这种物理键码，转成 CHIP-8 认识的 0x4
 int input_sdl_to_chip8(SDL_KeyCode keycode)
 {
     for (int i = 0; i < 16; i++) {
@@ -36,7 +37,7 @@ void input_handle_event(SDL_Event *event, chip8_t *cpu)
     if (event->type == SDL_KEYDOWN) {
         int key = input_sdl_to_chip8(event->key.keysym.sym);
         if (key >= 0) {
-            cpu->key_down[key] = 1;
+            cpu->key_down[key] = 1;//标记按下
 
             /* Fx0A: 等待按键 (CPU 正等待按键) */
             if (cpu->key_waiting) {
@@ -47,7 +48,7 @@ void input_handle_event(SDL_Event *event, chip8_t *cpu)
     } else if (event->type == SDL_KEYUP) {
         int key = input_sdl_to_chip8(event->key.keysym.sym);
         if (key >= 0) {
-            cpu->key_down[key] = 0;
+            cpu->key_down[key] = 0;//标记松开
         }
     }
 }

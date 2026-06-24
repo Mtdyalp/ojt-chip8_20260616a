@@ -60,7 +60,7 @@ int chip8_load(chip8_t *cpu, const char *path)
         return 0;
     }
 
-    size_t n = fread(cpu->mem + 0x200, 1, sz, fp);
+    size_t n = fread(cpu->mem + 0x200, 1, sz, fp);//从 ROM 文件读取数据到内存
     fclose(fp);
 
     if (n != (size_t)sz) {
@@ -74,7 +74,7 @@ int chip8_load(chip8_t *cpu, const char *path)
 
 void chip8_emulate_cycle(chip8_t *cpu)
 {
-    /* wait key: skip fetch/decode, poll keys only */
+    /* FX0A 的“等待按键”. 如果 CPU 正在等按键，就先不要执行下一条 CHIP-8 指令*/
     if (cpu->key_waiting) {
         for (int i = 0; i < 16; i++) {
             if (cpu->key_down[i]) {
@@ -83,17 +83,26 @@ void chip8_emulate_cycle(chip8_t *cpu)
                 break;
             }
         }
-        goto timers;
+    }else{
+      // 1. FETCH：从内存读 2 字节
+       uint16_t op = (cpu->mem[cpu->PC] << 8) | cpu->mem[cpu->PC + 1];
+       cpu->PC += 2;
+       // 2. EXECUTE：解码并执行
+       chip8_execute_opcode(cpu, op);
+    }
+ #if 0   
+    /* ===== 60Hz 定时器更新 ===== */
+    if (cpu->delay_timer > 0) {
+        cpu->delay_timer--;
     }
 
-    uint16_t op = (cpu->mem[cpu->PC] << 8) | cpu->mem[cpu->PC + 1];
-    cpu->PC += 2;
-    chip8_execute_opcode(cpu, op);
-
-timers:
-    /* 60Hz timer decrement */
-    if (cpu->delay_timer > 0) cpu->delay_timer--;
-    if (cpu->sound_timer > 0) cpu->sound_timer--;
+    /* ===== 声音定时器 + 蜂鸣 ===== */
+    if (cpu->sound_timer > 0) {
+        cpu->sound_timer--;
+        /* 只要 sound_timer > 0，蜂鸣器就应该响 */
+        /* 实际发声在 audio_update() 或主循环中处理 */
+    }
+#endif        
 }
 
 void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
@@ -128,7 +137,7 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
         case 0xA000: op_annn(cpu, op); break;
         case 0xB000: op_bnnn(cpu, op); break;
         case 0xC000: op_cxkk(cpu, op); break;
-        case 0xD000: op_dxyn(cpu, op); break;
+        case 0xD000: op_dxyn(cpu, op); break;//画图
         case 0xE000:
             if ((op & 0x00FF) == 0x009E) op_ex9e(cpu, op);
             else if ((op & 0x00FF) == 0x00A1) op_exa1(cpu, op);
