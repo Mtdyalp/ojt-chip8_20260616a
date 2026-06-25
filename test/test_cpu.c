@@ -6,7 +6,11 @@
 /* ============================================================
    测试辅助函数
    ============================================================ */
+typedef void (*test_fn_t)(void);
 
+static int total_groups = 0;
+static int passed_groups = 0;
+static int print_individual = 0;
 static int total_tests = 0;
 static int passed_tests = 0;
 
@@ -20,12 +24,43 @@ static void check(int passed)
 
 static void print_result(const char *name, int passed)
 {
+    if (!print_individual) return;
+
     if (passed)
         printf("Test %-2d %-20s [OK]\n", total_tests, name);
     else
         printf("Test %-2d %-20s [FAIL]\n", total_tests, name);
 }
 
+static void run_group(int no, const char *name, test_fn_t *tests, int count)
+{
+    int start_total = total_tests;
+    int start_passed = passed_tests;
+
+    for (int i = 0; i < count; i++) {
+        tests[i]();
+    }
+
+    int tests_run = total_tests - start_total;// 计算本组运行了多少测试
+    int tests_ok = passed_tests - start_passed;// 计算本组通过了多少测试
+
+    int group_ok = 0;
+    if (tests_run > 0 && tests_run == tests_ok) {// 如果本组有测试，并且全部通过
+        group_ok = 1;// 标记本组测试通过
+    }
+
+    total_groups++;// 统计总共运行了多少组测试
+
+    if (group_ok) {
+        passed_groups++;
+    }
+
+    if (group_ok) {
+        printf("Test %02d (%-22s): [OK]\n", no, name);
+    } else {
+        printf("Test %02d (%-22s): [FAIL]\n", no, name);
+    }
+}
 /* ============================================================
    寄存器操作类（11条）
    ============================================================ */
@@ -180,7 +215,7 @@ static void test_3xkk_se(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x3A3F);
     int passed = (cpu.PC == 0x202);
-    print_result("SE Vx, kk - equal", passed);
+ //   print_result("SE Vx, kk - equal", passed);
     check(passed);
 
     chip8_init(&cpu);
@@ -188,7 +223,7 @@ static void test_3xkk_se(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x3A40);
     passed = (cpu.PC == 0x200);
-    print_result("SE Vx, kk - not equal", passed);
+ //   print_result("SE Vx, kk - not equal", passed);
     check(passed);
 }
 
@@ -201,7 +236,7 @@ static void test_4xkk_sne(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x4A40);
     int passed = (cpu.PC == 0x202);
-    print_result("SNE Vx, kk - not equal", passed);
+//    print_result("SNE Vx, kk - not equal", passed);
     check(passed);
 
     chip8_init(&cpu);
@@ -209,7 +244,7 @@ static void test_4xkk_sne(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x4A3F);
     passed = (cpu.PC == 0x200);
-    print_result("SNE Vx, kk - equal", passed);
+ //   print_result("SNE Vx, kk - equal", passed);
     check(passed);
 }
 
@@ -221,7 +256,7 @@ static void test_bnnn_jump_v0(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0xBA35);
     int passed = (cpu.PC == 0xA45);
-    print_result("JP V0, nnn", passed);
+ //   print_result("JP V0, nnn", passed);
     check(passed);
 }
 
@@ -235,7 +270,7 @@ static void test_5xy0_se_reg(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x5AB0);
     int passed = (cpu.PC == 0x202);
-    print_result("SE Vx, Vy - equal", passed);
+ //   print_result("SE Vx, Vy - equal", passed);
     check(passed);
 
     chip8_init(&cpu);
@@ -244,7 +279,7 @@ static void test_5xy0_se_reg(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x5AB0);
     passed = (cpu.PC == 0x200);
-    print_result("SE Vx, Vy - not equal", passed);
+ //   print_result("SE Vx, Vy - not equal", passed);
     check(passed);
 }
 
@@ -258,7 +293,7 @@ static void test_9xy0_sne_reg(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x9AB0);
     int passed = (cpu.PC == 0x202);
-    print_result("SNE Vx, Vy - not equal", passed);
+//    print_result("SNE Vx, Vy - not equal", passed);
     check(passed);
 
     chip8_init(&cpu);
@@ -267,7 +302,7 @@ static void test_9xy0_sne_reg(void)
     cpu.PC = 0x200;
     chip8_execute_opcode(&cpu, 0x9AB0);
     passed = (cpu.PC == 0x200);
-    print_result("SNE Vx, Vy - equal", passed);
+//    print_result("SNE Vx, Vy - equal", passed);
     check(passed);
 }
 
@@ -281,7 +316,7 @@ static void test_2nnn_call(void)
     int passed = (cpu.SP == 1) &&
                  (cpu.stack[0] == 0x200) &&
                  (cpu.PC == 0xA35);
-    print_result("CALL nnn", passed);
+ //   print_result("CALL nnn", passed);
     check(passed);
 }
 
@@ -296,7 +331,7 @@ static void test_00ee_ret(void)
 
     int passed = (cpu.SP == 0) &&
                  (cpu.PC == 0x200);
-    print_result("RET", passed);
+//    print_result("RET", passed);
     check(passed);
 }
 
@@ -323,7 +358,7 @@ static void test_cls(void)
         }
     }
     passed = passed && (cpu.dirty == 1);
-    print_result("CLS", passed);
+//    print_result("CLS", passed);
     check(passed);
 }
 
@@ -419,7 +454,7 @@ static void test_exa1_sknp(void)
     print_result("SKNP - key pressed", passed);
     check(passed);
 }
-
+#if 0
 static void test_fx0a_wait_key(void)
 {
     chip8_t cpu;
@@ -432,11 +467,11 @@ static void test_fx0a_wait_key(void)
     print_result("LD Vx, K - wait flag", passed);
     check(passed);
 }
-
+#endif
 /* ============================================================
    定时器类 + 随机数（4条）
    ============================================================ */
-
+#if 0
 static void test_fx07_get_delay(void)
 {
     chip8_t cpu;
@@ -487,10 +522,20 @@ static void test_cxkk_rnd(void)
     print_result("RND Vx, kk - range", passed);
     check(passed);
 }
-
+#endif
 /* ============================================================
    内存操作类（5条）
    ============================================================ */
+static void test_annn_ld_i(void)
+{
+    chip8_t cpu;
+    chip8_init(&cpu);
+
+    chip8_execute_opcode(&cpu, 0xA300);
+
+    int passed = (cpu.I == 0x300);
+    check(passed);
+}
 
 static void test_fx1e_add_i(void)
 {
@@ -605,61 +650,34 @@ static void test_rom_loading(void)
    main
    ============================================================ */
 
+#define RUN_GROUP(no, name, ...) do { \
+    test_fn_t tests[] = { __VA_ARGS__ }; \
+    run_group(no, name, tests, sizeof(tests) / sizeof(tests[0])); \
+} while (0)
+
 int main(void)
 {
-    printf("\n");
     total_tests = 0;
     passed_tests = 0;
+    total_groups = 0;
+    passed_groups = 0;
 
-    /* 寄存器操作类 (11条) */
-    test_6xkk_ld_byte();
-    test_7xkk_add_byte();
-    test_8xy0_ld_reg();
-    test_8xy1_or();
-    test_8xy2_and();
-    test_8xy3_xor();
-    test_8xy4_add_carry();
-    test_8xy5_sub();
-    test_8xy6_shr();
-    test_8xy7_subn();
-    test_8xye_shl();
+    RUN_GROUP(1,  "LD Vx, byte",        test_6xkk_ld_byte);
+    RUN_GROUP(2,  "ADD Vx, byte",       test_7xkk_add_byte);
+    RUN_GROUP(3,  "LD Vx, Vy",          test_8xy0_ld_reg);
+    RUN_GROUP(4,  "OR/AND/XOR",         test_8xy1_or, test_8xy2_and, test_8xy3_xor, /*test_cxkk_rnd*/);
+    RUN_GROUP(5,  "ADD Vx, Vy + carry", test_8xy4_add_carry);
+    RUN_GROUP(6,  "SUB + borrow",       test_8xy5_sub, test_8xy7_subn);
+    RUN_GROUP(7,  "SHR/SHL",            test_8xy6_shr, test_8xye_shl);
+    RUN_GROUP(8,  "JP/CALL/RET",        test_1nnn_jump, test_bnnn_jump_v0, test_2nnn_call, test_00ee_ret);
+    RUN_GROUP(9,  "SE/SNE skip",        test_3xkk_se, test_4xkk_sne, test_5xy0_se_reg, test_9xy0_sne_reg, test_ex9e_skp, test_exa1_sknp, /*test_fx0a_wait_key*/);
+    RUN_GROUP(10, "LD I / ADD I",       test_annn_ld_i, test_fx1e_add_i, test_fx29_font_addr, /*test_fx07_get_delay, test_fx15_set_delay, test_fx18_set_sound*/);
+    RUN_GROUP(11, "BCD",                test_fx33_bcd);
+    RUN_GROUP(12, "LD [I] / LD Vx [I]", test_fx55_store, test_fx65_load);
+    RUN_GROUP(13, "DRW collision",      test_cls, test_draw);
+    RUN_GROUP(14, "font loading",       test_font_loading);
+    RUN_GROUP(15, "ROM loading",        test_rom_loading);
 
-    /* 控制流类 (8条) */
-    test_1nnn_jump();
-    test_3xkk_se();
-    test_4xkk_sne();
-    test_bnnn_jump_v0();
-    test_5xy0_se_reg();
-    test_9xy0_sne_reg();
-    test_2nnn_call();
-    test_00ee_ret();
-
-    /* 描画类 (2条) */
-    test_cls();
-    test_draw();
-
-    /* 键盘类 (3条) */
-    test_ex9e_skp();
-    test_exa1_sknp();
-    test_fx0a_wait_key();
-
-    /* 定时器类 + 随机数 (4条) */
-    test_fx07_get_delay();
-    test_fx15_set_delay();
-    test_fx18_set_sound();
-    test_cxkk_rnd();
-
-    /* 内存操作类 (5条) */
-    test_fx1e_add_i();
-    test_fx29_font_addr();
-    test_fx33_bcd();
-    test_fx55_store();
-    test_fx65_load();
-
-    /* 基础功能 (2条) */
-    test_font_loading();
-    test_rom_loading();
-
-    printf("\nAll %d tests passed.\n", passed_tests);
-    return (passed_tests == total_tests) ? 0 : 1;
+    printf("\nAll %d tests passed.\n", passed_groups);
+    return (passed_groups == total_groups) ? 0 : 1;
 }

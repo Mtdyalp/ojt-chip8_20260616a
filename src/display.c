@@ -30,15 +30,15 @@ int display_init(DisplayState *state)
 
 void display_render(DisplayState *state, chip8_t *cpu)
 {
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state->renderer);
+    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);//黑色
+    SDL_RenderClear(state->renderer);//清屏
 
     for (int y = 0; y < CHIP8_SCREEN_H; y++) {
         for (int x = 0; x < CHIP8_SCREEN_W; x++) {
             if (cpu->screen[y * CHIP8_SCREEN_W + x]) {
-                SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, 255);
-                SDL_Rect rect = {x * SCALE, y * SCALE, SCALE, SCALE};
-                SDL_RenderFillRect(state->renderer, &rect);
+                SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, 255);//白色
+                SDL_Rect rect = {x * SCALE, y * SCALE, SCALE, SCALE};//每个 CHIP-8 像素放大 SCALE 倍
+                SDL_RenderFillRect(state->renderer, &rect);//画白色方块
             }
         }
     }

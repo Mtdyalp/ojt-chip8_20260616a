@@ -68,7 +68,7 @@ int chip8_load(chip8_t *cpu, const char *path)
         return 0;
     }
 
-    printf("chip8: 加载 %s 成功 (%ld 字节)\n", path, sz);
+ //   printf("chip8: 加载 %s 成功 (%ld 字节)\n", path, sz);
     return 1;
 }
 

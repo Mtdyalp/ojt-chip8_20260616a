@@ -11,7 +11,7 @@
 void op_00e0(chip8_t *cpu, uint16_t op)
 {
     (void)op;
-    printf("[CLS] 清屏\n");   /* 加这行 */
+//    printf("[CLS] 清屏\n");   /* 加这行 */
     memset(cpu->screen, 0, sizeof(cpu->screen));
     cpu->dirty = 1;// 屏幕变了！
 }
@@ -193,15 +193,17 @@ void op_dxyn(chip8_t *cpu, uint16_t op)
     uint8_t sx = cpu->V[x] % 64;
     uint8_t sy = cpu->V[y] % 32;
 
-    printf("[DRAW] X=%d Y=%d N=%d I=0x%04X\n", sx, sy, n, cpu->I);
+//    printf("[DRAW] X=%d Y=%d N=%d I=0x%04X\n", sx, sy, n, cpu->I);
 
     /* 打印精灵数据（最多 16 行） */
-    printf("[DRAW] 精灵数据: ");
+ //   printf("[DRAW] 精灵数据: ");
+ #ifdef DEBUG
     int max_rows = (n < 16) ? n : 16;
     for (int i = 0; i < max_rows; i++) {
         printf("%02X ", cpu->mem[cpu->I + i]);
     }
     printf("\n");
+#endif
 
     cpu->V[0xF] = 0;
 
@@ -224,7 +226,7 @@ void op_dxyn(chip8_t *cpu, uint16_t op)
         }
     }
 
-    printf("[DRAW] 本次绘制了 %d 个像素\n", pixel_count);
+//    printf("[DRAW] 本次绘制了 %d 个像素\n", pixel_count);
     cpu->dirty = 1;
 }
 
