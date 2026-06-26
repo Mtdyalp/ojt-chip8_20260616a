@@ -34,18 +34,19 @@ int input_sdl_to_chip8(SDL_KeyCode keycode)
 
 void input_handle_event(SDL_Event *event, chip8_t *cpu)
 {
-    if (event->type == SDL_KEYDOWN) {
+    if (event->type == SDL_KEYDOWN) {//按键按下
         int key = input_sdl_to_chip8(event->key.keysym.sym);
         if (key >= 0) {
             cpu->key_down[key] = 1;//标记按下
-
+#if 0
             /* Fx0A: 等待按键 (CPU 正等待按键) */
             if (cpu->key_waiting) {
                 cpu->key_waiting = 0;
-                cpu->V[cpu->key_wait_value] = key;
+                cpu->V[cpu->key_wait_value] = key;//把按下的键存入 Vx
             }
+#endif                
         }
-    } else if (event->type == SDL_KEYUP) {
+    } else if (event->type == SDL_KEYUP) {//按键松开
         int key = input_sdl_to_chip8(event->key.keysym.sym);
         if (key >= 0) {
             cpu->key_down[key] = 0;//标记松开

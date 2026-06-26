@@ -24,12 +24,12 @@
 typedef struct {
     /* 寄存器 */
     uint8_t V[CHIP8_REG_COUNT];
-    uint16_t I;
-    uint16_t PC;
+    uint16_t I;// 数据的位置
+    uint16_t PC;// 指令的位置
 
     /* 调用栈 */
     uint16_t stack[CHIP8_STACK_DEPTH];
-    uint8_t SP;
+    uint8_t SP;// 栈指针
 
     /* 内存 + 显示 */
     uint8_t mem[CHIP8_MEM_SIZE];
@@ -43,7 +43,7 @@ typedef struct {
     /* 键盘 */
     int key_down[16];              /* 1=按下 */
     int key_waiting;               /* 1=正在等按键 (FX0A) */
-    uint8_t key_wait_value;
+    uint8_t key_wait_value;        // 等待按键时，按下的键存入 Vx
 
     /* 模拟器状态 */
     int running;

@@ -209,7 +209,7 @@ void op_dxyn(chip8_t *cpu, uint16_t op)
 
     int pixel_count = 0;  /* 统计画了多少像素 */
     for (int row = 0; row < n; row++) {
-        uint8_t byte = cpu->mem[cpu->I + row];
+        uint8_t byte = cpu->mem[cpu->I + row];/* 取出精灵数据的一行 */
         /* 1字节8位 就是8个像素 */
         for (int col = 0; col < 8; col++) {
             if (byte & (0x80 >> col)) {

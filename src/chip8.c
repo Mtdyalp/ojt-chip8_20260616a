@@ -74,8 +74,16 @@ int chip8_load(chip8_t *cpu, const char *path)
 
 void chip8_emulate_cycle(chip8_t *cpu)
 {
-    /* FX0A 的“等待按键”. 如果 CPU 正在等按键，就先不要执行下一条 CHIP-8 指令*/
-    if (cpu->key_waiting) {
+ #if 1     
+      // 1. FETCH：从内存读 2 字节
+       uint16_t op = (cpu->mem[cpu->PC] << 8) | cpu->mem[cpu->PC + 1];
+       cpu->PC += 2;
+       // 2. EXECUTE：解码并执行
+       chip8_execute_opcode(cpu, op);
+
+ #else
+    /* 如果 CPU 正在等按键，就先不要执行下一条 CHIP-8 指令*/
+    if (cpu->key_waiting) {// 等待按键
         for (int i = 0; i < 16; i++) {
             if (cpu->key_down[i]) {
                 cpu->V[cpu->key_wait_value] = i;
@@ -83,24 +91,12 @@ void chip8_emulate_cycle(chip8_t *cpu)
                 break;
             }
         }
-    }else{
+    }else{// CPU 没在等按键，就可以执行下一条 CHIP-8 指令
       // 1. FETCH：从内存读 2 字节
        uint16_t op = (cpu->mem[cpu->PC] << 8) | cpu->mem[cpu->PC + 1];
        cpu->PC += 2;
        // 2. EXECUTE：解码并执行
        chip8_execute_opcode(cpu, op);
-    }
- #if 0   
-    /* ===== 60Hz 定时器更新 ===== */
-    if (cpu->delay_timer > 0) {
-        cpu->delay_timer--;
-    }
-
-    /* ===== 声音定时器 + 蜂鸣 ===== */
-    if (cpu->sound_timer > 0) {
-        cpu->sound_timer--;
-        /* 只要 sound_timer > 0，蜂鸣器就应该响 */
-        /* 实际发声在 audio_update() 或主循环中处理 */
     }
 #endif        
 }
@@ -109,8 +105,8 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
 {
     switch (op & 0xF000) {
         case 0x0000:
-            if (op == 0x00E0) op_00e0(cpu, op);
-            else if (op == 0x00EE) op_00ee(cpu, op);
+            if (op == 0x00E0) op_00e0(cpu, op);// 清屏
+            else if (op == 0x00EE) op_00ee(cpu, op);// 从子程序返回
             break;
         case 0x1000: op_1nnn(cpu, op); break;
         case 0x2000: op_2nnn(cpu, op); break;
@@ -120,8 +116,8 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
         case 0x6000: op_6xkk(cpu, op); break;
         case 0x7000: op_7xkk(cpu, op); break;
         case 0x8000:
-            switch (N(op)) {
-                case 0x0: op_8xy0(cpu, op); break;
+            switch (N(op)) {// 0x8XYN
+                case 0x0: op_8xy0(cpu, op); break;// Vx = Vy
                 case 0x1: op_8xy1(cpu, op); break;
                 case 0x2: op_8xy2(cpu, op); break;
                 case 0x3: op_8xy3(cpu, op); break;
@@ -134,25 +130,25 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
             }
             break;
         case 0x9000: op_9xy0(cpu, op); break;
-        case 0xA000: op_annn(cpu, op); break;
-        case 0xB000: op_bnnn(cpu, op); break;
+        case 0xA000: op_annn(cpu, op); break;// I = nnn
+        case 0xB000: op_bnnn(cpu, op); break;// 跳转 V0 + nnn
         case 0xC000: op_cxkk(cpu, op); break;
         case 0xD000: op_dxyn(cpu, op); break;//画图
         case 0xE000:
-            if ((op & 0x00FF) == 0x009E) op_ex9e(cpu, op);
-            else if ((op & 0x00FF) == 0x00A1) op_exa1(cpu, op);
+            if ((op & 0x00FF) == 0x009E) op_ex9e(cpu, op);// 如果按下就跳一条指令
+            else if ((op & 0x00FF) == 0x00A1) op_exa1(cpu, op);// 如果没按就跳一条指令
             break;
         case 0xF000:
-            switch (op & 0x00FF) {
-                case 0x07: op_fx07(cpu, op); break;
-                case 0x0A: op_fx0a(cpu, op); break;
-                case 0x15: op_fx15(cpu, op); break;
-                case 0x18: op_fx18(cpu, op); break;
-                case 0x1E: op_fx1e(cpu, op); break;
-                case 0x29: op_fx29(cpu, op); break;
-                case 0x33: op_fx33(cpu, op); break;
-                case 0x55: op_fx55(cpu, op); break;
-                case 0x65: op_fx65(cpu, op); break;
+            switch (op & 0x00FF) {// 0xFXNN
+                case 0x07: op_fx07(cpu, op); break;// 将延迟定时器的值存入 Vx
+                case 0x0A: op_fx0a(cpu, op); break;// 等待按键
+                case 0x15: op_fx15(cpu, op); break;// 设置延迟定时器
+                case 0x18: op_fx18(cpu, op); break;// 设置声音定时器
+                case 0x1E: op_fx1e(cpu, op); break;// 将 Vx 的值加到 I 上
+                case 0x29: op_fx29(cpu, op); break;// 将 I 设置为 Vx 字体的地址
+                case 0x33: op_fx33(cpu, op); break; // 将 Vx 的值转换为 BCD 存入 I, I+1, I+2
+                case 0x55: op_fx55(cpu, op); break;// 将 V0~Vx 的值存入 I 开始的内存
+                case 0x65: op_fx65(cpu, op); break;// 将 I 开始的内存的值读入 V0~Vx
                 default: break;
             }
             break;
