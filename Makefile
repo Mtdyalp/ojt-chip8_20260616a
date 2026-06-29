@@ -4,7 +4,7 @@ DEBUG_FLAGS = -Wall -Wextra -g -I./include -std=c99 -DDEBUG
 LDFLAGS = -lm
 
 # ===== SDL2 链接参数（主程序用） =====
-SDL_LDFLAGS = -lm -lSDL2
+SDL_LDFLAGS = -lm -lSDL2 -lSDL2_ttf
 
 TARGET = chip8
 TEST_TARGET = test_cpu

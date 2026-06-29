@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 typedef enum {
-    DEBUG_RUNNING,
+    DEBUG_RUNNING,//0
     DEBUG_PAUSED,
     DEBUG_STEPPING
 } debug_state_t;
@@ -36,6 +36,23 @@ static void debug_print_state(const chip8_t *cpu)
            cpu->V[0xF]);
 #endif           
 }
+static const char *debug_state_name(debug_state_t state)
+{
+    switch (state) {
+    case DEBUG_RUNNING:
+        return "RUNNING";
+
+    case DEBUG_PAUSED:
+        return "PAUSED";
+
+    case DEBUG_STEPPING:
+        return "STEPPING";
+
+    default:
+        return "UNKNOWN";
+    }
+}
+
 static int has_breakpoint(uint16_t pc, uint16_t *breakpoints, int count)
 {
     for (int i = 0; i < count; i++) {
@@ -53,7 +70,7 @@ static void run_test_pattern(DisplayState *display, chip8_t *cpu)
 {
     cpu->screen[15 * CHIP8_SCREEN_W + 31] = 1;
     cpu->dirty = 1;
-    display_render(display, cpu);
+    display_render(display, cpu, NULL);
 
     cpu->delay_timer = 60;
     cpu->sound_timer = 60;
@@ -117,6 +134,8 @@ int main(int argc, char *argv[])
     debug_state_t debug_state = DEBUG_RUNNING;
     uint16_t breakpoints[MAX_BREAKPOINTS];
     int breakpoint_count = 0;
+    int skip_breakpoint_once = 0;
+    const char *status = NULL;
 
     char *szShortOptions = "dhb:";
     struct option stLongOptions[] = {
@@ -137,7 +156,7 @@ int main(int argc, char *argv[])
             if (addr > 0xFFF || breakpoint_count >= MAX_BREAKPOINTS) {
                 printf("Invalid breakpoint: %s\n", optarg);
                 return 1;
-           }
+            }
 
            breakpoints[breakpoint_count++] = (uint16_t)addr;
            debug_mode = 1;
@@ -161,7 +180,7 @@ int main(int argc, char *argv[])
 
     /* 初始化显示 */
     DisplayState display;
-    if (display_init(&display) != 0) {
+    if (display_init(&display, debug_mode) != 0) {
         return 1;
     }
 
@@ -192,9 +211,9 @@ int main(int argc, char *argv[])
     printf("PC = 0x%04X\n", cpu.PC);
     
     if (debug_mode) {
-    debug_state = DEBUG_PAUSED;
-    printf("[DBG] paused at start\n");
-    debug_print_state(&cpu);
+        debug_state = DEBUG_PAUSED;
+        printf("[DBG] paused at start\n");
+        debug_print_state(&cpu);
     }
     printf("按 ESC 或关闭窗口退出\n");
  //   printf("键盘映射: Q=左, E=右, 1/2/3/4=按键\n");
@@ -216,8 +235,11 @@ int main(int argc, char *argv[])
                             printf("[DBG] paused\n");
                             debug_print_state(&cpu);
                         } else {
-                                  debug_state = DEBUG_RUNNING;
-                                  printf("[DBG] running\n");
+                                  skip_breakpoint_once =
+                                                       has_breakpoint(cpu.PC, breakpoints, breakpoint_count);
+
+                                                   debug_state = DEBUG_RUNNING;
+                                                   printf("[DBG] running\n");
                         }
                     } else if (event.key.keysym.sym == SDLK_n) {// 'n' 单步执行
                                if (debug_state == DEBUG_PAUSED) {
@@ -238,18 +260,31 @@ int main(int argc, char *argv[])
                  chip8_emulate_cycle(&cpu);
             }
         } else {
-              if (debug_state == DEBUG_RUNNING) {// 运行模式
-                  debug_print_state(&cpu);
-                  chip8_emulate_cycle(&cpu);
-              } else if (debug_state == DEBUG_STEPPING) {// 单步执行模式
-                   debug_print_state(&cpu);
-                   chip8_emulate_cycle(&cpu);
+                   if (debug_state == DEBUG_RUNNING) {
+                       if (!skip_breakpoint_once &&
+                           has_breakpoint(cpu.PC, breakpoints, breakpoint_count)) {
 
-                   debug_state = DEBUG_PAUSED;
-                   debug_print_state(&cpu);
-              } else {
-                  /* DEBUG_PAUSED */
-              }
+                           debug_state = DEBUG_PAUSED;
+
+                           printf("[DBG] breakpoint hit at 0x%04X\n", cpu.PC);
+                           debug_print_state(&cpu);
+                       } else {
+                           skip_breakpoint_once = 0;
+                           chip8_emulate_cycle(&cpu);
+                       }
+                    }else if (debug_state == DEBUG_STEPPING) {
+                        /* N 键只执行一条指令 */
+                       printf("[DBG] before step\n");
+                       debug_print_state(&cpu);
+
+                       chip8_emulate_cycle(&cpu);
+
+                       /* 执行一条后重新暂停 */
+                       debug_state = DEBUG_PAUSED;
+
+                       printf("[DBG] after step\n");
+                       debug_print_state(&cpu);
+                    }
         }
 
         // 更新定时器和音频
@@ -261,7 +296,11 @@ int main(int argc, char *argv[])
         audio_update(cpu.sound_timer);
 
         /* 画完了 更新窗口 */
-        display_render(&display, &cpu);
+        if (debug_mode) {
+            status = debug_state_name(debug_state);
+        }
+
+        display_render(&display, &cpu, status);
         cpu.dirty = 0;
 
         /* 60Hz 速度控制 1s 60次*/
