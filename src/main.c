@@ -12,7 +12,7 @@ typedef enum {
     DEBUG_PAUSED,
     DEBUG_STEPPING
 } debug_state_t;
-#define MAX_BREAKPOINTS 32
+//#define MAX_BREAKPOINTS 32
 
 static void print_usage(const char *prog)
 {
@@ -52,7 +52,7 @@ static const char *debug_state_name(debug_state_t state)
         return "UNKNOWN";
     }
 }
-
+#if 0
 static int has_breakpoint(uint16_t pc, uint16_t *breakpoints, int count)
 {
     for (int i = 0; i < count; i++) {
@@ -63,6 +63,7 @@ static int has_breakpoint(uint16_t pc, uint16_t *breakpoints, int count)
 
     return 0;
 }
+#endif    
 /* ============================================================
    显示测试：画一个点
    ============================================================ */
@@ -131,10 +132,10 @@ int main(int argc, char *argv[])
     int debug_mode = 0;
     const char *rom_path = NULL;
     int iParameter;
-    debug_state_t debug_state = DEBUG_RUNNING;
-    uint16_t breakpoints[MAX_BREAKPOINTS];
-    int breakpoint_count = 0;
-    int skip_breakpoint_once = 0;
+    debug_state_t debug_state = DEBUG_RUNNING;    
+//    uint16_t breakpoints[MAX_BREAKPOINTS];
+//    int breakpoint_count = 0;
+//    int skip_breakpoint_once = 0;
     const char *status = NULL;
 
     char *szShortOptions = "dhb:";
@@ -151,6 +152,7 @@ int main(int argc, char *argv[])
             debug_mode = 1;
             break;
         case 'b': {
+#if 0            
             unsigned long addr = strtoul(optarg, NULL, 0);
 
             if (addr > 0xFFF || breakpoint_count >= MAX_BREAKPOINTS) {
@@ -159,6 +161,7 @@ int main(int argc, char *argv[])
             }
 
            breakpoints[breakpoint_count++] = (uint16_t)addr;
+#endif           
            debug_mode = 1;
            break;
         }    
@@ -235,11 +238,13 @@ int main(int argc, char *argv[])
                             printf("[DBG] paused\n");
                             debug_print_state(&cpu);
                         } else {
+#if 0                            
                                   skip_breakpoint_once =
                                                        has_breakpoint(cpu.PC, breakpoints, breakpoint_count);
-
+#endif
                                                    debug_state = DEBUG_RUNNING;
                                                    printf("[DBG] running\n");
+                                                   
                         }
                     } else if (event.key.keysym.sym == SDLK_n) {// 'n' 单步执行
                                if (debug_state == DEBUG_PAUSED) {
@@ -261,6 +266,9 @@ int main(int argc, char *argv[])
             }
         } else {
                    if (debug_state == DEBUG_RUNNING) {
+#if 1                    
+                       chip8_emulate_cycle(&cpu);
+#else                       
                        if (!skip_breakpoint_once &&
                            has_breakpoint(cpu.PC, breakpoints, breakpoint_count)) {
 
@@ -272,6 +280,7 @@ int main(int argc, char *argv[])
                            skip_breakpoint_once = 0;
                            chip8_emulate_cycle(&cpu);
                        }
+#endif                           
                     }else if (debug_state == DEBUG_STEPPING) {
                         /* N 键只执行一条指令 */
                        printf("[DBG] before step\n");
