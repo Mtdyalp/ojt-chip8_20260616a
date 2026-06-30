@@ -212,9 +212,10 @@ int main(int argc, char *argv[])
     printf("===== CHIP-8 模拟器 =====\n");
     printf("ROM: %s\n", rom_path);
     printf("PC = 0x%04X\n", cpu.PC);
-    
+
+    /* 调试模式下打印初始状态 */
     if (debug_mode) {
-        debug_state = DEBUG_PAUSED;
+        debug_state = DEBUG_PAUSED;//调试状态设为 PAUSED
         printf("[DBG] paused at start\n");
         debug_print_state(&cpu);
     }
@@ -304,13 +305,13 @@ int main(int argc, char *argv[])
         /* 更新蜂鸣状态（根据 sound_timer） */
         audio_update(cpu.sound_timer);
 
-        /* 画完了 更新窗口 */
+    
         if (debug_mode) {
             status = debug_state_name(debug_state);
         }
-
-        display_render(&display, &cpu, status);
-        cpu.dirty = 0;
+        /* 画完了 更新窗口 */
+        display_render(&display, &cpu, status);//
+        cpu.dirty = 0;// 已经刷新完，不需要重复刷新
 
         /* 60Hz 速度控制 1s 60次*/
         SDL_Delay(16);

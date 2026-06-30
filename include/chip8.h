@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 /* ============================================================
    常量定义
@@ -57,5 +58,5 @@ void chip8_init(chip8_t *cpu);
 int  chip8_load(chip8_t *cpu, const char *path);
 void chip8_emulate_cycle(chip8_t *cpu);
 void chip8_execute_opcode(chip8_t *cpu, uint16_t opcode);
-
+void chip8_disassemble(uint16_t op, char *text, size_t text_size);
 #endif

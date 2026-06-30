@@ -158,3 +158,174 @@ void chip8_execute_opcode(chip8_t *cpu, uint16_t op)
     }
 }
 
+void chip8_disassemble(uint16_t op,
+                       char *text,
+                       size_t text_size)
+{
+    if (text == NULL || text_size == 0) {
+        return;
+    }
+
+    uint8_t x = (op >> 8) & 0x0F;
+    uint8_t y = (op >> 4) & 0x0F;
+    uint8_t n = op & 0x0F;
+    uint8_t kk = op & 0x00FF;
+    uint16_t nnn = op & 0x0FFF;
+
+    snprintf(text, text_size, "UNKNOWN");
+
+    switch (op & 0xF000) {
+    case 0x0000:
+        if (op == 0x00E0) {
+            snprintf(text, text_size, "CLS");
+        } else if (op == 0x00EE) {
+            snprintf(text, text_size, "RET");
+        }
+        break;
+
+    case 0x1000:
+        //snprintf(text, text_size, "JP 0x%03X", nnn);
+        snprintf(text, text_size, "JP %03X", nnn);
+        break;
+
+    case 0x2000:
+        //snprintf(text, text_size, "CALL 0x%03X", nnn);
+        snprintf(text, text_size, "CALL %03X", nnn);
+        break;
+
+    case 0x3000:
+        //snprintf(text, text_size, "SE V%X, 0x%02X", x, kk);
+        snprintf(text, text_size, "SE V%X, %02X", x, kk);
+        break;
+
+    case 0x4000:
+        //snprintf(text, text_size, "SNE V%X, 0x%02X", x, kk);
+        snprintf(text, text_size, "SNE V%X, %02X", x, kk);
+        break;
+
+    case 0x5000:
+        if (n == 0) {
+            snprintf(text, text_size, "SE V%X, V%X", x, y);
+        }
+        break;
+
+    case 0x6000:
+        //snprintf(text, text_size, "LD V%X, 0x%02X", x, kk);
+        snprintf(text, text_size, "LD V%X, %02X", x, kk);
+        break;
+
+    case 0x7000:
+        //snprintf(text, text_size, "ADD V%X, 0x%02X", x, kk);
+        snprintf(text, text_size, "ADD V%X, %02X", x, kk);
+        break;
+
+    case 0x8000:
+        switch (n) {
+        case 0x0:
+            snprintf(text, text_size, "LD V%X, V%X", x, y);
+            break;
+        case 0x1:
+            snprintf(text, text_size, "OR V%X, V%X", x, y);
+            break;
+        case 0x2:
+            snprintf(text, text_size, "AND V%X, V%X", x, y);
+            break;
+        case 0x3:
+            snprintf(text, text_size, "XOR V%X, V%X", x, y);
+            break;
+        case 0x4:
+            snprintf(text, text_size, "ADD V%X, V%X", x, y);
+            break;
+        case 0x5:
+            snprintf(text, text_size, "SUB V%X, V%X", x, y);
+            break;
+        case 0x6:
+            snprintf(text, text_size, "SHR V%X", x);
+            break;
+        case 0x7:
+            snprintf(text, text_size, "SUBN V%X, V%X", x, y);
+            break;
+        case 0xE:
+            snprintf(text, text_size, "SHL V%X", x);
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case 0x9000:
+        if (n == 0) {
+            snprintf(text, text_size, "SNE V%X, V%X", x, y);
+        }
+        break;
+
+    case 0xA000:
+        //snprintf(text, text_size, "LD I, 0x%03X", nnn);
+        snprintf(text, text_size, "LD I, %03X", nnn);
+        break;
+
+    case 0xB000:
+        //snprintf(text, text_size, "JP V0, 0x%03X", nnn);
+        snprintf(text, text_size, "JP V0, %03X", nnn);
+        break;
+
+    case 0xC000:
+        //snprintf(text, text_size, "RND V%X, 0x%02X", x, kk);
+        snprintf(text, text_size, "RND V%X, %02X", x, kk);
+        break;
+
+    case 0xD000:
+        snprintf(text, text_size, "DRW V%X, V%X, %X", x, y, n);
+        break;
+
+    case 0xE000:
+        switch (kk) {
+        case 0x9E:
+            snprintf(text, text_size, "SKP V%X", x);
+            break;
+        case 0xA1:
+            snprintf(text, text_size, "SKNP V%X", x);
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case 0xF000:
+        switch (kk) {
+        case 0x07:
+            snprintf(text, text_size, "LD V%X, DT", x);
+            break;
+        case 0x0A:
+            snprintf(text, text_size, "LD V%X, K", x);
+            break;
+        case 0x15:
+            snprintf(text, text_size, "LD DT, V%X", x);
+            break;
+        case 0x18:
+            snprintf(text, text_size, "LD ST, V%X", x);
+            break;
+        case 0x1E:
+            snprintf(text, text_size, "ADD I, V%X", x);
+            break;
+        case 0x29:
+            snprintf(text, text_size, "LD F, V%X", x);
+            break;
+        case 0x33:
+            snprintf(text, text_size, "LD B, V%X", x);
+            break;
+        case 0x55:
+            snprintf(text, text_size, "LD [I], V%X", x);
+            break;
+        case 0x65:
+            snprintf(text, text_size, "LD V%X, [I]", x);
+            break;
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+}
