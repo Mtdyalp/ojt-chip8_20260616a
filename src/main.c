@@ -6,13 +6,58 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 typedef enum {
     DEBUG_RUNNING,//0
     DEBUG_PAUSED,
     DEBUG_STEPPING
 } debug_state_t;
-//#define MAX_BREAKPOINTS 32
+#define MAX_BREAKPOINTS 32
+
+/*
+ * 函数名称    : Chip8_StrToU32
+ * 功能        : 将字符串转换成 uint32_t 类型数据
+ * 输入参数    : szSrcStr  字符串地址，例如 "512"、"0x200"、"0xFFF"
+ * 输出参数    : ulDstNum  转换后的 uint32_t 数据
+ * 返回值      : 0 成功
+ *               1 失败
+ * 说明        : base 使用 0，支持十进制、十六进制、八进制自动识别
+ */
+int Chip8_StrToU32(const char *szSrcStr,
+                          uint32_t *ulDstNum)
+{
+    char *szEndPtr = NULL;
+    unsigned long ulTmp;
+
+    if (szSrcStr == NULL || ulDstNum == NULL) {
+        return 1;
+    }
+
+    if (szSrcStr[0] == '\0' ||
+        szSrcStr[0] == '-') {
+        *ulDstNum = 0;
+        return 1;
+    }
+
+    /* 调用 strtoul() 前必须清除 errno */
+    errno = 0;
+
+    ulTmp = strtoul(szSrcStr, &szEndPtr, 0);
+
+    if (errno == ERANGE ||
+        szEndPtr == szSrcStr ||
+        *szEndPtr != '\0' ||
+        ulTmp > UINT32_MAX) {
+
+        *ulDstNum = 0;
+        return 1;
+    }
+
+    *ulDstNum = (uint32_t)ulTmp;
+    return 0;
+}
+
 
 static void print_usage(const char *prog)
 {
@@ -52,16 +97,16 @@ static const char *debug_state_name(debug_state_t state)
         return "UNKNOWN";
     }
 }
-#if 0
+#if 1
 static int has_breakpoint(uint16_t pc, uint16_t *breakpoints, int count)
 {
     for (int i = 0; i < count; i++) {
         if (breakpoints[i] == pc) {
-            return 1;
+            return 1;/* 有断点，暂停，返回1 */
         }
     }
 
-    return 0;
+    return 0;/* 无断点，继续执行，返回0 */
 }
 #endif    
 /* ============================================================
@@ -71,7 +116,7 @@ static void run_test_pattern(DisplayState *display, chip8_t *cpu)
 {
     cpu->screen[15 * CHIP8_SCREEN_W + 31] = 1;
     cpu->dirty = 1;
-    display_render(display, cpu, NULL);
+    display_render(display, cpu, NULL, NULL, 0);
 
     cpu->delay_timer = 60;
     cpu->sound_timer = 60;
@@ -133,17 +178,18 @@ int main(int argc, char *argv[])
     const char *rom_path = NULL;
     int iParameter;
     debug_state_t debug_state = DEBUG_RUNNING;    
-//    uint16_t breakpoints[MAX_BREAKPOINTS];
-//    int breakpoint_count = 0;
-//    int skip_breakpoint_once = 0;
+    uint16_t breakpoints[MAX_BREAKPOINTS];
+    int breakpoint_count = 0;
+    int skip_breakpoint_once = 0;
     const char *status = NULL;
+    uint32_t addr = 0;
 
     char *szShortOptions = "dhb:";
     struct option stLongOptions[] = {
-        {"debug", no_argument, NULL, 'd'},
-        {"break", required_argument, NULL, 'b'},
-        {"help",  no_argument, NULL, 'h'},
-        {0, 0, 0, 0}
+        {"debug" , 0,  NULL,   'd'},
+        {"break" , 1,  NULL,   'b'},
+        {"help"  , 0,  NULL,   'h'},
+        {0       , 0,  0   ,    0 }
     };
 
     while ((iParameter = getopt_long(argc, argv, szShortOptions, stLongOptions, NULL)) != -1) {
@@ -151,17 +197,29 @@ int main(int argc, char *argv[])
         case 'd':
             debug_mode = 1;
             break;
-        case 'b': {
-#if 0            
-            unsigned long addr = strtoul(optarg, NULL, 0);
-
-            if (addr > 0xFFF || breakpoint_count >= MAX_BREAKPOINTS) {
-                printf("Invalid breakpoint: %s\n", optarg);
+        case 'b': {          
+            if (Chip8_StrToU32(optarg, &addr) != 0) {
+                printf("invalid address: %s\n", optarg);
                 return 1;
             }
 
-           breakpoints[breakpoint_count++] = (uint16_t)addr;
-#endif           
+            /* 一条指令需要读取 address 和 address + 1 */
+            if (address > 0x0FFE) {
+                printf("Breakpoint out of range: %s\n", optarg);
+                return 1;
+           }
+
+            if ((address & 1) != 0) {
+                 printf("Breakpoint must be even: %s\n", optarg);
+                return 1;
+            }
+
+            if (breakpoint_count >= MAX_BREAKPOINTS) {
+                printf("Too many breakpoints\n");
+                return 1;
+           }
+
+           breakpoints[breakpoint_count++] = (uint16_t)addr;      
            debug_mode = 1;
            break;
         }    
@@ -234,17 +292,16 @@ int main(int argc, char *argv[])
                 // 调试模式下的按键处理
                 if (debug_mode) {
                     if (event.key.keysym.sym == SDLK_SPACE) {// 空格键切换运行/暂停
-                        if (debug_state == DEBUG_RUNNING) {
+                        if (debug_state == DEBUG_RUNNING) {// 之前是运行，按空格就暂停
                             debug_state = DEBUG_PAUSED;
                             printf("[DBG] paused\n");
                             debug_print_state(&cpu);
-                        } else {
-#if 0                            
-                                  skip_breakpoint_once =
-                                                       has_breakpoint(cpu.PC, breakpoints, breakpoint_count);
+                        } else {//之前是暂停，按空格就继续运行
+#if 1                             /* 因为当前是暂停状态，程序检查当前 PC 是否就是断点。有断点，返回1； 无断点，返回0*/
+                                  skip_breakpoint_once = has_breakpoint(cpu.PC, breakpoints, breakpoint_count);
 #endif
-                                                   debug_state = DEBUG_RUNNING;
-                                                   printf("[DBG] running\n");
+                                  debug_state = DEBUG_RUNNING;
+                                  printf("[DBG] running\n");
                                                    
                         }
                     } else if (event.key.keysym.sym == SDLK_n) {// 'n' 单步执行
@@ -267,11 +324,11 @@ int main(int argc, char *argv[])
             }
         } else {
                    if (debug_state == DEBUG_RUNNING) {
-#if 1                    
+#if 0                    
                        chip8_emulate_cycle(&cpu);
 #else                       
-                       if (!skip_breakpoint_once &&
-                           has_breakpoint(cpu.PC, breakpoints, breakpoint_count)) {
+                       //从断点恢复的第一次则跳过检查
+                       if (skip_breakpoint_once == 0 && has_breakpoint(cpu.PC, breakpoints, breakpoint_count)) {
 
                            debug_state = DEBUG_PAUSED;
 
@@ -310,7 +367,7 @@ int main(int argc, char *argv[])
             status = debug_state_name(debug_state);
         }
         /* 画完了 更新窗口 */
-        display_render(&display, &cpu, status);//
+        display_render(&display, &cpu, status, breakpoints, breakpoint_count);
         cpu.dirty = 0;// 已经刷新完，不需要重复刷新
 
         /* 60Hz 速度控制 1s 60次*/

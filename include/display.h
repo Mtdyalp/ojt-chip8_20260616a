@@ -26,7 +26,9 @@ int display_init(DisplayState *state, int debug_mode);
 
 void display_render(DisplayState *state,
                     chip8_t *cpu,
-                    const char *debug_status);
+                    const char *debug_status,
+                    const uint16_t *breakpoints,
+                    int breakpoint_count);
 
 void display_cleanup(DisplayState *state);
 

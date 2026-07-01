@@ -42,9 +42,12 @@ static void draw_text(DisplayState *state,
     SDL_FreeSurface(surface);//释放 Surface
 }
 
-static void draw_debug_panel(DisplayState *state,
-                             chip8_t *cpu,
-                             const char *debug_status)
+static void draw_debug_panel(
+    DisplayState *state,
+    chip8_t *cpu,
+    const char *debug_status,
+    const uint16_t *breakpoints,
+    int breakpoint_count)
 {
     SDL_Rect panel = {
         GAME_W,
@@ -147,6 +150,39 @@ static void draw_debug_panel(DisplayState *state,
         draw_text(state, line, x, y);
         y += 16;
     }
+
+    draw_text(state, "== Stack ==", x, y);
+    y += 16;
+
+    if (cpu->SP == 0) {
+    draw_text(state, "(empty)", x, y);
+    y += 16;
+    }
+
+    //栈
+    for (int i = (int)cpu->SP - 1; i >= 0; i--) {
+    snprintf(line, sizeof(line),
+             "[%d] 0x%04X%s",
+             i,
+             cpu->stack[i],
+             i == cpu->SP - 1 ? " <- top" : "");
+
+    draw_text(state, line, x, y);
+    y += 16;
+    }
+
+   draw_text(state, "== Breakpoints ==", x, y);
+   y += 16;
+
+   //断点管理
+   for (int i = 0; i < breakpoint_count; i++) {
+   snprintf(line, sizeof(line),
+            "* 0x%04X", breakpoints[i]);
+
+   draw_text(state, line, x, y);
+   y += 16;
+   }
+
 }
 
 int display_init(DisplayState *state, int debug_mode)
@@ -215,7 +251,12 @@ int display_init(DisplayState *state, int debug_mode)
     return 0;
 }
 
-void display_render(DisplayState *state, chip8_t *cpu, const char *debug_status)
+void display_render(
+    DisplayState *state,
+    chip8_t *cpu,
+    const char *debug_status,
+    const uint16_t *breakpoints,
+    int breakpoint_count)
 {
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);//黑色
     SDL_RenderClear(state->renderer);//清屏
@@ -231,7 +272,7 @@ void display_render(DisplayState *state, chip8_t *cpu, const char *debug_status)
     }
 
     if (state->debug_mode && state->font) {
-        draw_debug_panel(state, cpu, debug_status);
+        draw_debug_panel(state, cpu, debug_status, breakpoints, breakpoint_count);
     }
 
     SDL_RenderPresent(state->renderer);
