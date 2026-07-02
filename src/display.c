@@ -156,16 +156,13 @@ static void draw_debug_panel(
     y += 16;
 
     if (cpu->SP == 0) {
-    draw_text(state, "(empty)", x, y);
-    y += 16;
+        draw_text(state, "(empty)", x, y);
+        y += 16;
     }
-
-    for (int i = (int)cpu->SP - 1; i >= 0; i--) {
-    snprintf(line, sizeof(line),
-             "[%d] 0x%04X%s",
-             i,
-             cpu->stack[i],
-             i == cpu->SP - 1 ? " <- top" : "");
+    
+    //stack[0] ～ stack[SP-1]  
+    for (int i = 0; i < (int)cpu->SP; i++) {
+    snprintf(line, sizeof(line),"[%d] 0x%04X",i,cpu->stack[i]);
 
     draw_text(state, line, x, y);
     y += 16;
@@ -176,8 +173,7 @@ static void draw_debug_panel(
    y += 16;
 
    for (int i = 0; i < breakpoint_count; i++) {
-   snprintf(line, sizeof(line),
-            "* 0x%04X", breakpoints[i]);
+   snprintf(line, sizeof(line),"* 0x%04X", breakpoints[i]);
 
    draw_text(state, line, x, y);
    y += 16;
