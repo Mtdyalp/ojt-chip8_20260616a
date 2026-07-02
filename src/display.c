@@ -53,14 +53,14 @@ static void draw_debug_panel(
         GAME_W,
         0,
         DEBUG_PANEL_W,
-        GAME_H
+        DEBUG_WINDOW_H
     };
 
     SDL_SetRenderDrawColor(state->renderer, 30, 30, 30, 255);//深灰色
     SDL_RenderFillRect(state->renderer, &panel);
 
     SDL_SetRenderDrawColor(state->renderer, 100, 100, 100, 255);
-    SDL_RenderDrawLine(state->renderer, GAME_W, 0, GAME_W, GAME_H);
+    SDL_RenderDrawLine(state->renderer, GAME_W, 0, GAME_W, DEBUG_WINDOW_H);//分割线 从坐标(GAME_W,0)到(GAME_W,DEBUG_WINDOW_H)分割
 
     int x = GAME_W + 12;
     int y = 8;
@@ -228,18 +228,20 @@ int display_init(DisplayState *state, int debug_mode)
         return -1;
     }
 
-    //debug_mode==1时，window_width==DEBUG_WINDOW_W
-    //debug_mode==0时，window_width==NORMAL_WINDOW_W
     int window_width = debug_mode
                      ? DEBUG_WINDOW_W
                      : NORMAL_WINDOW_W;
+
+    int window_height = debug_mode
+                  ? DEBUG_WINDOW_H
+                  : NORMAL_WINDOW_H;
     //创建窗口
     state->window = SDL_CreateWindow(
         "CHIP-8",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        window_width,
-        WINDOW_H,
+        window_width, /* 窗口宽度 */
+        window_height,/* 窗口高度 */
         SDL_WINDOW_SHOWN);//窗口日志
 
     if (!state->window) {

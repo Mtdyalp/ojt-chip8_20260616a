@@ -13,7 +13,9 @@
 
 #define NORMAL_WINDOW_W GAME_W
 #define DEBUG_WINDOW_W  (GAME_W + DEBUG_PANEL_W)
-#define WINDOW_H GAME_H
+
+#define NORMAL_WINDOW_H GAME_H
+#define DEBUG_WINDOW_H  480
 
 typedef struct {
     SDL_Window *window;
