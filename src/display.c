@@ -151,6 +151,7 @@ static void draw_debug_panel(
         y += 16;
     }
 
+    //栈
     draw_text(state, "== Stack ==", x, y);
     y += 16;
 
@@ -159,7 +160,6 @@ static void draw_debug_panel(
     y += 16;
     }
 
-    //栈
     for (int i = (int)cpu->SP - 1; i >= 0; i--) {
     snprintf(line, sizeof(line),
              "[%d] 0x%04X%s",
@@ -171,10 +171,10 @@ static void draw_debug_panel(
     y += 16;
     }
 
+   //断点管理
    draw_text(state, "== Breakpoints ==", x, y);
    y += 16;
 
-   //断点管理
    for (int i = 0; i < breakpoint_count; i++) {
    snprintf(line, sizeof(line),
             "* 0x%04X", breakpoints[i]);
@@ -182,6 +182,36 @@ static void draw_debug_panel(
    draw_text(state, line, x, y);
    y += 16;
    }
+  
+#if 0   
+    //memory_address
+   if (memory_watch_enabled) {
+       snprintf(line, sizeof(line),
+             "== Memory 0x%04X ==",
+             memory_address);
+
+        draw_text(state, line, x, y);
+        y += 16;
+
+        for (int i = 0; i < 8; i++) {
+        int address = memory_address + i;
+
+        if (address >= CHIP8_MEM_SIZE) {
+            break;
+        }
+
+        snprintf(line, sizeof(line),"0x%04X: %02X",address,cpu->mem[address]);
+
+        draw_text(state, line, x, y);
+        y += 16;
+       }
+   }
+#endif
+
+#if 0
+    snprintf(line, sizeof(line),"Speed: %d cycles/frame",cycles_per_frame);
+    draw_text(state, line, x, y);
+#endif
 
 }
 
@@ -272,7 +302,12 @@ void display_render(
     }
 
     if (state->debug_mode && state->font) {
+#if 1        
         draw_debug_panel(state, cpu, debug_status, breakpoints, breakpoint_count);
+#else
+        draw_debug_panel(state, cpu, debug_status, breakpoints, breakpoint_count，
+                         memory_watch_enabled, (uint16_t)memory_address);
+#endif                
     }
 
     SDL_RenderPresent(state->renderer);

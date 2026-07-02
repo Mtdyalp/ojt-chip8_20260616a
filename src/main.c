@@ -183,11 +183,14 @@ int main(int argc, char *argv[])
     int skip_breakpoint_once = 0;
     const char *status = NULL;
     uint32_t addr = 0;
+  //int cycles_per_frame = 1;
 
     char *szShortOptions = "dhb:";
+//    char *szShortOptions = "dhb:m:";
     struct option stLongOptions[] = {
         {"debug" , 0,  NULL,   'd'},
         {"break" , 1,  NULL,   'b'},
+      //{"memory", 1,  NULL,   'm'},
         {"help"  , 0,  NULL,   'h'},
         {0       , 0,  0   ,    0 }
     };
@@ -199,17 +202,17 @@ int main(int argc, char *argv[])
             break;
         case 'b': {          
             if (Chip8_StrToU32(optarg, &addr) != 0) {
-                printf("invalid address: %s\n", optarg);
+                printf("invalid addr: %s\n", optarg);
                 return 1;
             }
 
             /* 一条指令需要读取 address 和 address + 1 */
-            if (address > 0x0FFE) {
+            if (addr > 0x0FFE) {
                 printf("Breakpoint out of range: %s\n", optarg);
                 return 1;
            }
 
-            if ((address & 1) != 0) {
+            if ((addr & 1) != 0) {
                  printf("Breakpoint must be even: %s\n", optarg);
                 return 1;
             }
@@ -223,6 +226,18 @@ int main(int argc, char *argv[])
            debug_mode = 1;
            break;
         }    
+#if 0
+        case 'm':
+            if (Chip8_StrToU32(optarg,&memory_address) != 0 ||
+                memory_address >= CHIP8_MEM_SIZE) {
+                printf("Invalid memory address: %s\n",optarg);
+                return 1;
+            }
+
+            memory_watch_enabled = 1;
+            debug_mode = 1;
+            break;
+#endif
         case 'h':
             print_usage(argv[0]);
             return 0;
@@ -289,7 +304,7 @@ int main(int argc, char *argv[])
             if (event.type == SDL_KEYDOWN) {//按键按下
                 if (event.key.keysym.sym == SDLK_ESCAPE) running = 0;//按 ESC 退出
 
-                // 调试模式下的按键处理
+                // 调试模式下的按键s'pace/n
                 if (debug_mode) {
                     if (event.key.keysym.sym == SDLK_SPACE) {// 空格键切换运行/暂停
                         if (debug_state == DEBUG_RUNNING) {// 之前是运行，按空格就暂停
@@ -309,6 +324,28 @@ int main(int argc, char *argv[])
                                    debug_state = DEBUG_STEPPING;
                             }
                     }
+#if 0               
+                   // 调试模式下的按键+/-
+                   if (event.key.keysym.sym == SDLK_EQUALS ||
+                       event.key.keysym.sym == SDLK_KP_PLUS) {
+
+                       if (cycles_per_frame < 20) {
+                           cycles_per_frame++;
+                        }
+
+                       printf("[DBG] speed: %d cycles/frame\n",cycles_per_frame);
+                    }
+
+                   if (event.key.keysym.sym == SDLK_MINUS ||
+                      event.key.keysym.sym == SDLK_KP_MINUS) {
+
+                      if (cycles_per_frame > 1) {
+                          cycles_per_frame--;
+                      }
+
+                      printf("[DBG] speed: %d cycles/frame\n",cycles_per_frame);
+                  }     
+#endif                    
                 }
 
             }
@@ -328,6 +365,7 @@ int main(int argc, char *argv[])
                        chip8_emulate_cycle(&cpu);
 #else                       
                        //从断点恢复的第一次则跳过检查
+                   //for (int i = 0;i < cycles_per_frame;i++) 
                        if (skip_breakpoint_once == 0 && has_breakpoint(cpu.PC, breakpoints, breakpoint_count)) {
 
                            debug_state = DEBUG_PAUSED;
@@ -368,6 +406,10 @@ int main(int argc, char *argv[])
         }
         /* 画完了 更新窗口 */
         display_render(&display, &cpu, status, breakpoints, breakpoint_count);
+#if 0        
+        display_render(&display, &cpu, status, breakpoints, breakpoint_count, 
+                       memory_watch_enabled, (uint16_t)memory_address);  
+#endif                       
         cpu.dirty = 0;// 已经刷新完，不需要重复刷新
 
         /* 60Hz 速度控制 1s 60次*/
